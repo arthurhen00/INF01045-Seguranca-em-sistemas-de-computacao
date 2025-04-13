@@ -2,10 +2,10 @@
 # I declare here all my hatred for Valorant,
 # Riot, its players and community.
 
+from typing import Tuple
 from Crypto.Cipher import DES
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Random import get_random_bytes
-from binascii import hexlify
 
 def caesar_cipher(text: str, shift: int) -> str:
     result = []
@@ -18,79 +18,65 @@ def caesar_cipher(text: str, shift: int) -> str:
             result.append(char)
     return ''.join(result)
 
-def des_cbc_cipher(text: str, key: bytes, iv: bytes) -> bytes:
-    cipher = DES.new(key, DES.MODE_CBC, iv)
-    text_bytes = text.encode("utf-8")
-    padded_text = pad(text_bytes, DES.block_size)
-    encrypted_text = cipher.encrypt(padded_text)
-    return encrypted_text
-
 def generate_iv() -> bytes:
     return b'\x01\x02\x03\x04\x05\x06\x07\x08'
     # return get_random_bytes(8)
 
-def split_blocks(data, block_size=8):
+def split_blocks(data: bytes, block_size: int = 8) -> list[bytes]:
     return [data[i:i+block_size] for i in range(0, len(data), block_size)]
 
-def des_ecb_cipher(text: str, key: bytes) -> bytes:
-    cipher = DES.new(key, DES.MODE_ECB)
-    text_bytes = text.encode("utf-8")
-    padded_text = pad(text_bytes, DES.block_size)
-    encrypted_text = cipher.encrypt(padded_text)
+def des_cipher(
+    mode: str,
+    text: str,
+    key: bytes,
+    iv: bytes = None
+) -> Tuple[bytes, list[bytes], bytes, list[bytes]]:
+    cipher = None
+    if mode == "ECB":
+        cipher = DES.new(key, DES.MODE_ECB)
+    elif mode == "CBC":
+        cipher = DES.new(key, DES.MODE_CBC, iv)
+    else:
+        raise ValueError("Unsupported des mode")
+    
+    text_bytes = pad(text.encode("utf-8"), DES.block_size)
 
-    blocks_ecb = split_blocks(encrypted_text)
+    encrypted_text = cipher.encrypt(text_bytes)
+    encrypted_blocks = split_blocks(encrypted_text)
 
-    reordered_blocks = blocks_ecb[:]
-    if len(reordered_blocks) < 4:
+    r_encrypted_blocks = encrypted_blocks[:]
+    if len(r_encrypted_blocks) < 4:
         raise Exception("Not enough blocks")
 
-    reordered_blocks[0], reordered_blocks[3] = reordered_blocks[3], reordered_blocks[0]
-    reordered_ciphertext = b"".join(reordered_blocks)
-    
-    print(f"\nDES ECB - Encrypted text         (hex): {hexlify(encrypted_text).decode()}")
-    print(  f"DES ECB - Encrypted text C1<->C4 (hex): {hexlify(reordered_ciphertext).decode()}")
+    r_encrypted_blocks[0], r_encrypted_blocks[3] = r_encrypted_blocks[3], r_encrypted_blocks[0]
+    r_encrypted_text = b"".join(r_encrypted_blocks)
 
-    print("\nDES ECB - Encrypted blocks (hex) / Decrypted blocks:")
-    for i, block in enumerate(blocks_ecb, 1):
-        decrypted_block = cipher.decrypt(block)
-        print(f"C{i}: {hexlify(block).decode()} -> {decrypted_block}")
+    return encrypted_text, encrypted_blocks, r_encrypted_text, r_encrypted_blocks
 
-    decrypted_message = unpad(cipher.decrypt(encrypted_text), DES.block_size)
-    print(f"\nDES ECB - Decrypted text        : {decrypted_message}")
-    decrypted_message = unpad(cipher.decrypt(reordered_ciphertext), DES.block_size)
-    print(  f"DES ECB - Decrypted text C1<->C4: {decrypted_message}")
+def des_cipher_decode(
+    mode: str,
+    ciphertext: bytes,
+    blocks: list[bytes],
+    key: bytes,
+    iv: bytes = None
+) -> Tuple[bytes, list[bytes]]:
+    decrypt_cipher = None
+    decrypted_message = None
+    if mode == "ECB":
+        decrypt_cipher = DES.new(key, DES.MODE_ECB)
+    elif mode == "CBC":
+        decrypt_cipher = DES.new(key, DES.MODE_CBC, iv)
+    else:
+        raise ValueError("Unsupported des mode")
+    
+    decrypted_message = unpad(decrypt_cipher.decrypt(ciphertext), DES.block_size)
 
-
-def des_cbc_cipher2(text: str, key: bytes, iv: bytes) -> bytes:
-    cipher = DES.new(key, DES.MODE_CBC, iv)
-    decrypt_cipher = DES.new(key, DES.MODE_CBC, iv)
-    text_bytes = text.encode("utf-8")
-    padded_text = pad(text_bytes, DES.block_size)
-    encrypted_text = cipher.encrypt(padded_text)
+    if mode == "CBC": 
+        decrypt_cipher = DES.new(key, DES.MODE_CBC, iv)
     
-    blocks_cbc = split_blocks(encrypted_text, DES.block_size)
-
-    reordered_blocks = blocks_cbc[:]
-    if len(reordered_blocks) < 4:
-        raise Exception("Not enough blocks")
-    
-    reordered_blocks[0], reordered_blocks[3] = reordered_blocks[3], reordered_blocks[0]
-    reordered_ciphertext = b"".join(reordered_blocks)
-    
-    print(f"\nDES CBC - Encrypted text         (hex): {hexlify(encrypted_text).decode()}")
-    print(  f"DES CBC - Encrypted text C1<->C4 (hex): {hexlify(reordered_ciphertext).decode()}")
-    
-    print("\nDES CBC - Encrypted blocks (hex) / Decrypted blocks:")
-    for i, block in enumerate(blocks_cbc, 1):
+    decrypted_blocks = []
+    for i, block in enumerate(blocks, 1):
         decrypted_block = decrypt_cipher.decrypt(block)
-        print(f"C{i}: {hexlify(block).decode()} -> {decrypted_block}")
+        decrypted_blocks.append(decrypted_block)
 
-    
-    decrypt_cipher = DES.new(key, DES.MODE_CBC, iv)
-    decrypted_message = unpad(decrypt_cipher.decrypt(encrypted_text), DES.block_size)
-    print(f"\nDES CBC - Decrypted text        : {decrypted_message}")
-    
-    decrypt_cipher = DES.new(key, DES.MODE_CBC, iv)
-    decrypted_message = unpad(decrypt_cipher.decrypt(reordered_ciphertext), DES.block_size)
-    print(  f"DES CBC - Decrypted text C1<->C4: {decrypted_message}")
-    
+    return decrypted_message, decrypted_blocks

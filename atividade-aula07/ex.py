@@ -1,4 +1,6 @@
-from cipher import caesar_cipher, des_cbc_cipher, generate_iv, des_ecb_cipher, des_cbc_cipher2
+from binascii import hexlify
+
+from cipher import caesar_cipher, generate_iv, des_cipher, des_cipher_decode
 from histogram import save_histogram
 
 def ex1():
@@ -20,9 +22,8 @@ def ex1():
 
     key = b'12345678'
     iv = generate_iv()
-    des_text = des_cbc_cipher(plaintext, key, iv)
+    des_text = des_cipher("CBC", plaintext, key, iv)
     save_histogram(des_text, "histogram_des_cbc.png")
-
 
 def ex2():
     plaintext = "Bob's salary is $25000--Tom's salary is $15000"
@@ -30,11 +31,36 @@ def ex2():
     iv = generate_iv()
 
     print("\n===== Testing DES ECB =====")
-    des_ecb_cipher(plaintext, key)
+    encrypted_text, encrypted_blocks, r_encrypted_text, r_encrypted_blocks = des_cipher("ECB", plaintext, key)
+    decrypted_text, decrypted_blocks = des_cipher_decode("ECB", encrypted_text, encrypted_blocks, key)
+    r_decrypted_text, _ = des_cipher_decode("ECB", r_encrypted_text, r_encrypted_blocks, key)
+
+    print(f"\nDES ECB - Encrypted text         (hex): {hexlify(encrypted_text).decode()}")
+    print(  f"DES ECB - Encrypted text C1<->C4 (hex): {hexlify(r_encrypted_text).decode()}")
+
+    print("\nDES ECB - Encrypted blocks (hex) / Decrypted blocks:")
+    for i, (en_block, r_dec_block) in enumerate(zip(encrypted_blocks, decrypted_blocks), 1):
+        print(f"C{i}: {hexlify(en_block).decode()} -> {r_dec_block}")
+
+    print(f"\nDES ECB - Decrypted text        : {decrypted_text}")
+    print(  f"DES ECB - Decrypted text C1<->C4: {r_decrypted_text}")
 
     print("\n===== Testing DES CBC =====")
-    des_cbc_cipher2(plaintext, key, iv)
+    encrypted_text, encrypted_blocks, r_encrypted_text, r_encrypted_blocks = des_cipher("CBC", plaintext, key, iv)
+    decrypted_text, decrypted_blocks = des_cipher_decode("CBC", encrypted_text, encrypted_blocks, key, iv)
+    r_decrypted_text, _ = des_cipher_decode("CBC", r_encrypted_text, r_encrypted_blocks, key, iv)
 
+    print(f"\nDES CBC - Encrypted text         (hex): {hexlify(encrypted_text).decode()}")
+    print(  f"DES CBC - Encrypted text C1<->C4 (hex): {hexlify(r_encrypted_text).decode()}")
+
+    print("\nDES CBC - Encrypted blocks (hex) / Decrypted blocks:")
+    for i, (en_block, r_dec_block) in enumerate(zip(encrypted_blocks, decrypted_blocks), 1):
+        print(f"C{i}: {hexlify(en_block).decode()} -> {r_dec_block}")
+
+    print(f"\nDES CBC - Decrypted text        : {decrypted_text}")
+    print(  f"DES CBC - Decrypted text C1<->C4: {r_decrypted_text}")
+
+    print('\n')
 
 def ex3():
     plaintext = "Bob's salary is $25000--Tom's salary is $15000"
