@@ -84,10 +84,13 @@ def des_cbc_cipher2(text: str, key: bytes, iv: bytes) -> bytes:
     for i, block in enumerate(blocks_cbc, 1):
         decrypted_block = decrypt_cipher.decrypt(block)
         print(f"C{i}: {hexlify(block).decode()} -> {decrypted_block}")
+
     
-    # TODO:
-    # decrypted_message = unpad(decrypt_cipher.decrypt(encrypted_text), DES.block_size)
-    # print(f"\nDES CBC - Decrypted text        : {decrypted_message}")
-    # decrypted_message = unpad(decrypt_cipher.decrypt(reordered_ciphertext), DES.block_size)
-    # print(  f"DES CBC - Decrypted text C1<->C4: {decrypted_message}")
+    decrypt_cipher = DES.new(key, DES.MODE_CBC, iv)
+    decrypted_message = unpad(decrypt_cipher.decrypt(encrypted_text), DES.block_size)
+    print(f"\nDES CBC - Decrypted text        : {decrypted_message}")
+    
+    decrypt_cipher = DES.new(key, DES.MODE_CBC, iv)
+    decrypted_message = unpad(decrypt_cipher.decrypt(reordered_ciphertext), DES.block_size)
+    print(  f"DES CBC - Decrypted text C1<->C4: {decrypted_message}")
     
