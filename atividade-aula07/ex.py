@@ -64,4 +64,24 @@ def ex2():
 
 def ex3():
     plaintext = "Bob's salary is $25000--Tom's salary is $15000"
+    key = bytes.fromhex("11 22 33 44 55 66 77 88".replace(" ", ""))
+    iv = generate_iv()
+
+    target_block_index = 5 - 1
+    target_byte_index = 1
+
+    _, encrypted_blocks, _, _ = des_cipher("CBC", plaintext, key, iv)
+
+    original_byte = encrypted_blocks[target_block_index][target_byte_index]
+    new_byte = original_byte ^ ( ord('1') ^ ord('.') )
+
+    m_encrypted_blocks = encrypted_blocks[:]
+    modified_block = bytearray(m_encrypted_blocks[target_block_index])
+    modified_block[target_byte_index] = new_byte
+    m_encrypted_blocks[target_block_index] = bytes(modified_block)
+    m_encrypted_text = b"".join(m_encrypted_blocks)
+
+    decrypted_text, _ = des_cipher_decode("CBC", m_encrypted_text, m_encrypted_blocks, key, iv)
+
+    print(f"\nDES CBC - Decrypted text: {decrypted_text}")
 
