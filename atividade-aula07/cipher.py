@@ -30,7 +30,7 @@ def des_cipher(
     text: str,
     key: bytes,
     iv: bytes = None
-) -> Tuple[bytes, list[bytes], bytes, list[bytes]]:
+) -> Tuple[bytes, list[bytes]]:
     cipher = None
     if mode == "ECB":
         cipher = DES.new(key, DES.MODE_ECB)
@@ -44,14 +44,7 @@ def des_cipher(
     encrypted_text = cipher.encrypt(text_bytes)
     encrypted_blocks = split_blocks(encrypted_text)
 
-    r_encrypted_blocks = encrypted_blocks[:]
-    if len(r_encrypted_blocks) < 4:
-        raise Exception("Not enough blocks")
-
-    r_encrypted_blocks[0], r_encrypted_blocks[3] = r_encrypted_blocks[3], r_encrypted_blocks[0]
-    r_encrypted_text = b"".join(r_encrypted_blocks)
-
-    return encrypted_text, encrypted_blocks, r_encrypted_text, r_encrypted_blocks
+    return encrypted_text, encrypted_blocks
 
 def des_cipher_decode(
     mode: str,

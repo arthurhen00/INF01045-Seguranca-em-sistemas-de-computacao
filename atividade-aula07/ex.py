@@ -4,6 +4,7 @@ from cipher import caesar_cipher, generate_iv, des_cipher, des_cipher_decode
 from histogram import save_histogram
 
 def ex1():
+    print(f"---- ex1()")
     plaintext = """
     Plot
     Gandalf tricks Bilbo Baggins into hosting a party for Thorin Oakenshield and his band of twelve dwarves (Dwalin, Balin, Kili, Fili, Dori, Nori, Ori, Oin, Gloin, Bifur, Bofur, and Bombur), who go over their plans to reclaim their ancient home, Lonely Mountain, and its vast treasure from the dragon Smaug. Gandalf unveils Thror's map showing a secret door into the Mountain and proposes that dumbfounded Bilbo should serve as the expedition's "burglar". The dwarves ridicule the idea, but Bilbo, indignant, joins despite himself.
@@ -22,17 +23,27 @@ def ex1():
 
     key = b'12345678'
     iv = generate_iv()
-    des_text = des_cipher("CBC", plaintext, key, iv)
+    des_text, _ = des_cipher("CBC", plaintext, key, iv)
     save_histogram(des_text, "histogram_des_cbc.png")
 
+    print('\n')
+
 def ex2():
+    print(f"---- ex2()")
     plaintext = "Bob's salary is $25000--Tom's salary is $15000"
     key = bytes.fromhex("11 22 33 44 55 66 77 88".replace(" ", ""))
     iv = generate_iv()
 
     print("\n===== Testing DES ECB =====")
-    encrypted_text, encrypted_blocks, r_encrypted_text, r_encrypted_blocks = des_cipher("ECB", plaintext, key)
+    encrypted_text, encrypted_blocks = des_cipher("ECB", plaintext, key)
     decrypted_text, decrypted_blocks = des_cipher_decode("ECB", encrypted_text, encrypted_blocks, key)
+
+    r_encrypted_blocks = encrypted_blocks[:]
+    if len(r_encrypted_blocks) < 4:
+        raise Exception("Not enough blocks")
+
+    r_encrypted_blocks[0], r_encrypted_blocks[3] = r_encrypted_blocks[3], r_encrypted_blocks[0]
+    r_encrypted_text = b"".join(r_encrypted_blocks)
     r_decrypted_text, _ = des_cipher_decode("ECB", r_encrypted_text, r_encrypted_blocks, key)
 
     print(f"\nDES ECB - Encrypted text         (hex): {hexlify(encrypted_text).decode()}")
@@ -46,8 +57,15 @@ def ex2():
     print(  f"DES ECB - Decrypted text C1<->C4: {r_decrypted_text}")
 
     print("\n===== Testing DES CBC =====")
-    encrypted_text, encrypted_blocks, r_encrypted_text, r_encrypted_blocks = des_cipher("CBC", plaintext, key, iv)
+    encrypted_text, encrypted_blocks = des_cipher("CBC", plaintext, key, iv)
     decrypted_text, decrypted_blocks = des_cipher_decode("CBC", encrypted_text, encrypted_blocks, key, iv)
+
+    r_encrypted_blocks = encrypted_blocks[:]
+    if len(r_encrypted_blocks) < 4:
+        raise Exception("Not enough blocks")
+
+    r_encrypted_blocks[0], r_encrypted_blocks[3] = r_encrypted_blocks[3], r_encrypted_blocks[0]
+    r_encrypted_text = b"".join(r_encrypted_blocks)
     r_decrypted_text, _ = des_cipher_decode("CBC", r_encrypted_text, r_encrypted_blocks, key, iv)
 
     print(f"\nDES CBC - Encrypted text         (hex): {hexlify(encrypted_text).decode()}")
@@ -63,6 +81,7 @@ def ex2():
     print('\n')
 
 def ex3():
+    print(f"---- ex3()")
     plaintext = "Bob's salary is $25000--Tom's salary is $15000"
     key = bytes.fromhex("11 22 33 44 55 66 77 88".replace(" ", ""))
     iv = generate_iv()
@@ -70,7 +89,7 @@ def ex3():
     target_block_index = 5 - 1
     target_byte_index = 1
 
-    _, encrypted_blocks, _, _ = des_cipher("CBC", plaintext, key, iv)
+    _, encrypted_blocks = des_cipher("CBC", plaintext, key, iv)
 
     original_byte = encrypted_blocks[target_block_index][target_byte_index]
     new_byte = original_byte ^ ( ord('1') ^ ord('.') )
@@ -85,3 +104,4 @@ def ex3():
 
     print(f"\nDES CBC - Decrypted text: {decrypted_text}")
 
+    print('\n')
